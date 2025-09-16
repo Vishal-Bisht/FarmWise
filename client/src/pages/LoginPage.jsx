@@ -166,7 +166,7 @@ const LoginPage = () => {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 className="mt-1 appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                placeholder="Enter your phone number"
+                placeholder="+91 1234567890"
               />
             </div>
             {showOtpInput && (
