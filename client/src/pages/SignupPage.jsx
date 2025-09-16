@@ -7,25 +7,13 @@ import {
   clearRecaptcha,
 } from "../firebase/auth";
 import { useAuth } from "../contexts/AuthContext";
-import { updateProfile } from "firebase/auth";
 
 const SignupPage = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    phone: "",
-    farmType: "",
-    location: "",
-    agreedToTerms: false,
-  });
-
+  const [phone, setPhone] = useState("");
   const [errors, setErrors] = useState({});
   const [isPhoneLoading, setIsPhoneLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [isFinishLoading, setIsFinishLoading] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
-  const [authMethod, setAuthMethod] = useState(null); // Track which auth method was used
 
   // Phone verification states
   const [showPhoneVerification, setShowPhoneVerification] = useState(false);
@@ -34,6 +22,13 @@ const SignupPage = () => {
   const recaptchaVerifierRef = useRef(null);
 
   const { userLoggedIn } = useAuth();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (userLoggedIn) {
+      navigate("/dashboard");
+    }
+  }, [userLoggedIn, navigate]);
 
   // Cleanup function for recaptcha
   useEffect(() => {
@@ -44,46 +39,12 @@ const SignupPage = () => {
     };
   }, []);
 
-  const farmTypes = [
-    "Crop Farming",
-    "Dairy Farming",
-    "Poultry Farming",
-    "Mixed Farming",
-    "Organic Farming",
-    "Greenhouse Farming",
-    "Livestock Farming",
-    "Other",
-  ];
-
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-
-    if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "",
-      }));
-    }
-  };
-
-  const validateStep1 = () => {
+  const validatePhone = () => {
     const newErrors = {};
 
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = "First name is required";
-    }
-
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = "Last name is required";
-    }
-
-    if (!formData.phone.trim()) {
+    if (!phone.trim()) {
       newErrors.phone = "Phone number is required";
-    } else if (!/^\+?[\d\s-()]+$/.test(formData.phone)) {
+    } else if (!/^\+?[\d\s-()]+$/.test(phone)) {
       newErrors.phone = "Invalid phone number format";
     }
 
@@ -91,176 +52,75 @@ const SignupPage = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const validateStep2 = () => {
-    const newErrors = {};
-
-    if (!formData.farmType) {
-      newErrors.farmType = "Please select your farm type";
-    }
-
-    if (!formData.location.trim()) {
-      newErrors.location = "Location is required";
-    }
-
-    if (!formData.agreedToTerms) {
-      newErrors.agreedToTerms = "You must agree to the terms and conditions";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
   const handlePhoneSignup = async () => {
-    if (!validateStep1()) {
+    if (!validatePhone()) {
       return;
     }
 
+    setIsPhoneLoading(true);
+    setErrors({});
+
     try {
-      setIsPhoneLoading(true);
-      setErrors({});
-
-      // Clear any existing recaptcha
-      if (recaptchaVerifierRef.current) {
-        clearRecaptcha(recaptchaVerifierRef.current);
-        recaptchaVerifierRef.current = null;
-      }
-
-      // Setup recaptcha verifier
-      recaptchaVerifierRef.current = setupRecaptcha("recaptcha-container");
-
-      // Send verification code
-      const confirmation = await doSignInWithPhone(
-        formData.phone,
-        recaptchaVerifierRef.current
-      );
-      setConfirmationResult(confirmation);
+      const result = await doSignInWithPhone(phone, recaptchaVerifierRef);
+      setConfirmationResult(result);
       setShowPhoneVerification(true);
-      setErrors({});
-
-      console.log("Verification code sent");
     } catch (error) {
       console.error("Phone signup error:", error);
-
-      // Clean up recaptcha on error
-      if (recaptchaVerifierRef.current) {
-        clearRecaptcha(recaptchaVerifierRef.current);
-        recaptchaVerifierRef.current = null;
-      }
-
-      let errorMessage = "Failed to send verification code. Please try again.";
+      let errorMessage = "Phone signup failed. Please try again.";
 
       if (error.code === "auth/invalid-phone-number") {
-        errorMessage =
-          "Invalid phone number format. Please use format: +1234567890";
+        errorMessage = "Invalid phone number. Please check and try again.";
       } else if (error.code === "auth/too-many-requests") {
         errorMessage = "Too many requests. Please try again later.";
-      } else if (error.message && error.message.includes("reCAPTCHA")) {
-        errorMessage =
-          "reCAPTCHA error. Please refresh the page and try again.";
       }
 
-      setErrors({ general: errorMessage });
+      setErrors({ phone: errorMessage });
     } finally {
       setIsPhoneLoading(false);
     }
   };
 
   const handleVerifyCode = async () => {
-    if (!verificationCode) {
+    if (!verificationCode.trim()) {
       setErrors({ verificationCode: "Please enter the verification code" });
       return;
     }
 
+    setIsPhoneLoading(true);
+    setErrors({});
+
     try {
-      setIsPhoneLoading(true);
-      const result = await confirmationResult.confirm(verificationCode);
+      await confirmationResult.confirm(verificationCode);
+      console.log("Phone verification successful!");
 
-      await updateProfile(result.user, {
-        displayName: `${formData.firstName} ${formData.lastName}`,
-      });
-
-      console.log("Phone verification successful:", result.user);
-
-      // Set auth method and move to step 2 to complete farm information
-      setAuthMethod("phone");
-      setShowPhoneVerification(false);
-      setCurrentStep(2);
-      setErrors({});
+      // Redirect to onboarding after successful verification
+      navigate("/onboarding");
     } catch (error) {
       console.error("Verification error:", error);
-      setErrors({
-        verificationCode: "Invalid verification code. Please try again.",
-      });
+      let errorMessage = "Invalid verification code. Please try again.";
+
+      if (error.code === "auth/invalid-verification-code") {
+        errorMessage = "Invalid verification code. Please check and try again.";
+      } else if (error.code === "auth/code-expired") {
+        errorMessage = "Verification code expired. Please request a new one.";
+      }
+
+      setErrors({ verificationCode: errorMessage });
     } finally {
       setIsPhoneLoading(false);
     }
   };
 
-  const handlePrevStep = () => {
-    setCurrentStep(1);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (currentStep === 1) {
-      if (validateStep1()) {
-        setCurrentStep(2);
-      }
-      return;
-    }
-
-    if (currentStep === 2) {
-      if (!validateStep2()) {
-        return;
-      }
-
-      // Complete the signup for authenticated users
-      if (userLoggedIn) {
-        try {
-          setIsFinishLoading(true);
-          alert("Welcome! Account created successfully.");
-          navigate("/");
-        } catch (error) {
-          console.error("Error completing signup:", error);
-          setErrors({ general: "Error completing signup. Please try again." });
-        } finally {
-          setIsFinishLoading(false);
-        }
-        return;
-      }
-
-      setErrors({
-        general: "Please authenticate first using phone or Google.",
-      });
-    }
-  };
   const handleGoogleSignup = async () => {
+    setIsGoogleLoading(true);
+    setErrors({});
+
     try {
-      setIsGoogleLoading(true);
-      setErrors({});
-
       const result = await doSignInWithGoogle();
-
-      // Extract name from Google account
-      const displayName = result.user.displayName || "";
-      const nameParts = displayName.split(" ");
-      const firstName = nameParts[0] || "";
-      const lastName = nameParts.slice(1).join(" ") || "";
-
-      // Update form data with Google account information
-      setFormData((prev) => ({
-        ...prev,
-        firstName: firstName,
-        lastName: lastName,
-      }));
-
       console.log("Google signup successful:", result.user);
 
-      // Set auth method and move to step 2 to complete farm information
-      setAuthMethod("google");
-      setCurrentStep(2);
-      setErrors({});
+      // Redirect directly to onboarding after successful Google signup
+      navigate("/onboarding");
     } catch (error) {
       console.error("Google signup error:", error);
 
@@ -293,7 +153,7 @@ const SignupPage = () => {
               Verify Your Phone Number
             </h2>
             <p className="mt-2 text-center text-sm text-gray-600">
-              Enter the verification code sent to {formData.phone}
+              Enter the verification code sent to {phone}
             </p>
           </div>
 
@@ -368,34 +228,98 @@ const SignupPage = () => {
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth={2}
-            d="M15 19l-7-7 7-7"
+            d="M10 19l-7-7m0 0l7-7m-7 7h18"
           />
         </svg>
         Back to Home
       </button>
 
       <div className="max-w-md w-full space-y-8">
-        {/* Header */}
-        <div className="text-center">
-          <div className="mx-auto h-12 w-12 bg-green-600 rounded-full flex items-center justify-center">
-            <svg
-              className="h-6 w-6 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-              />
-            </svg>
-          </div>
+        <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Join FarmWise Community
+            Join FarmWise
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
+            Create your account to get started with smart farming
+          </p>
+        </div>
+
+        {/* General Error */}
+        {errors.general && (
+          <div className="rounded-md bg-red-50 p-4">
+            <div className="text-sm text-red-800">{errors.general}</div>
+          </div>
+        )}
+
+        {/* Google Signup Button */}
+        <div>
+          <button
+            onClick={handleGoogleSignup}
+            disabled={isGoogleLoading}
+            className="group relative w-full flex justify-center py-3 px-4 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+              <path
+                fill="#4285F4"
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+              />
+              <path
+                fill="#34A853"
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+              />
+              <path
+                fill="#FBBC05"
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+              />
+              <path
+                fill="#EA4335"
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+              />
+            </svg>
+            {isGoogleLoading ? "Signing up..." : "Continue with Google"}
+          </button>
+        </div>
+
+        <div className="flex items-center">
+          <div className="flex-1 border-t border-gray-300" />
+          <div className="px-4 text-sm text-gray-500">Or</div>
+          <div className="flex-1 border-t border-gray-300" />
+        </div>
+
+        {/* Phone Signup Form */}
+        <div className="space-y-4">
+          <div>
+            <label
+              htmlFor="phone"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Phone Number
+            </label>
+            <input
+              id="phone"
+              name="phone"
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="mt-1 appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500"
+              placeholder="Enter your phone number"
+            />
+            {errors.phone && (
+              <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
+            )}
+          </div>
+
+          <button
+            onClick={handlePhoneSignup}
+            disabled={isPhoneLoading}
+            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isPhoneLoading ? "Sending Code..." : "Continue with Phone"}
+          </button>
+        </div>
+
+        <div className="text-center">
+          <p className="text-sm text-gray-600">
             Already have an account?{" "}
             <button
               onClick={() => navigate("/login")}
@@ -405,309 +329,6 @@ const SignupPage = () => {
             </button>
           </p>
         </div>
-
-        {/* Progress Indicator */}
-        <div className="flex justify-center mb-8">
-          <div className="flex items-center space-x-4">
-            <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                currentStep >= 1
-                  ? "bg-green-600 text-white"
-                  : "bg-gray-200 text-gray-600"
-              }`}
-            >
-              1
-            </div>
-            <div
-              className={`w-8 h-1 ${
-                currentStep >= 2 ? "bg-green-600" : "bg-gray-200"
-              }`}
-            ></div>
-            <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                currentStep >= 2
-                  ? "bg-green-600 text-white"
-                  : "bg-gray-200 text-gray-600"
-              }`}
-            >
-              2
-            </div>
-          </div>
-        </div>
-
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {/* General Error Display */}
-          {errors.general && (
-            <div className="rounded-md bg-red-50 p-4">
-              <div className="text-sm text-red-800">{errors.general}</div>
-            </div>
-          )}
-
-          {currentStep === 1 ? (
-            // Step 1: Personal Information
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-gray-800">
-                Personal Information
-              </h3>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div>
-                  <label
-                    htmlFor="firstName"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    First Name
-                  </label>
-                  <input
-                    id="firstName"
-                    name="firstName"
-                    type="text"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
-                      errors.firstName ? "border-red-300" : "border-gray-300"
-                    } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500`}
-                  />
-                  {errors.firstName && (
-                    <p className="mt-1 text-sm text-red-600">
-                      {errors.firstName}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <label
-                    htmlFor="lastName"
-                    className="block text-sm font-medium text-gray-700"
-                  >
-                    Last Name
-                  </label>
-                  <input
-                    id="lastName"
-                    name="lastName"
-                    type="text"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
-                      errors.lastName ? "border-red-300" : "border-gray-300"
-                    } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500`}
-                  />
-                  {errors.lastName && (
-                    <p className="mt-1 text-sm text-red-600">
-                      {errors.lastName}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <label
-                  htmlFor="phone"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Phone Number
-                </label>
-                <input
-                  id="phone"
-                  name="phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
-                    errors.phone ? "border-red-300" : "border-gray-300"
-                  } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500`}
-                  placeholder="+91 1234567890"
-                />
-                {errors.phone && (
-                  <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
-                )}
-              </div>
-
-              <button
-                type="button"
-                onClick={handlePhoneSignup}
-                disabled={isPhoneLoading || isGoogleLoading}
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
-              >
-                {isPhoneLoading ? "Sending Code..." : "Continue with Phone"}
-              </button>
-            </div>
-          ) : (
-            // Step 2: Farm Information
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-gray-800">
-                Farm Information
-              </h3>
-
-              {/* Show authentication success */}
-              {userLoggedIn && authMethod && (
-                <div className="rounded-md bg-green-50 p-4">
-                  <div className="flex">
-                    <div className="flex-shrink-0">
-                      <svg
-                        className="h-5 w-5 text-green-400"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </div>
-                    <div className="ml-3">
-                      <p className="text-sm font-medium text-green-800">
-                        Successfully authenticated with{" "}
-                        {authMethod === "google" ? "Google" : "Phone"}!
-                      </p>
-                      <p className="text-sm text-green-700 mt-1">
-                        Please complete your farm information below.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <label
-                  htmlFor="farmType"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Farm Type
-                </label>
-                <select
-                  id="farmType"
-                  name="farmType"
-                  value={formData.farmType}
-                  onChange={handleChange}
-                  className={`mt-1 block w-full px-3 py-2 border ${
-                    errors.farmType ? "border-red-300" : "border-gray-300"
-                  } bg-white rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500`}
-                >
-                  <option value="">Select your farm type</option>
-                  {farmTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {type}
-                    </option>
-                  ))}
-                </select>
-                {errors.farmType && (
-                  <p className="mt-1 text-sm text-red-600">{errors.farmType}</p>
-                )}
-              </div>
-              <div>
-                <label
-                  htmlFor="location"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Farm Location
-                </label>
-                <input
-                  id="location"
-                  name="location"
-                  type="text"
-                  value={formData.location}
-                  onChange={handleChange}
-                  className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
-                    errors.location ? "border-red-300" : "border-gray-300"
-                  } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500`}
-                  placeholder="City, State/Province, Country"
-                />
-                {errors.location && (
-                  <p className="mt-1 text-sm text-red-600">{errors.location}</p>
-                )}
-              </div>
-              <div className="flex items-center">
-                <input
-                  id="agreedToTerms"
-                  name="agreedToTerms"
-                  type="checkbox"
-                  checked={formData.agreedToTerms}
-                  onChange={handleChange}
-                  className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                />
-                <label
-                  htmlFor="agreedToTerms"
-                  className="ml-2 block text-sm text-gray-900"
-                >
-                  I agree to the{" "}
-                  <a href="#" className="text-green-600 hover:text-green-500">
-                    Terms and Conditions
-                  </a>{" "}
-                  and{" "}
-                  <a href="#" className="text-green-600 hover:text-green-500">
-                    Privacy Policy
-                  </a>
-                </label>
-              </div>
-              {errors.agreedToTerms && (
-                <p className="text-sm text-red-600">{errors.agreedToTerms}</p>
-              )}
-              <div className="flex space-x-4">
-                <button
-                  type="button"
-                  onClick={handlePrevStep}
-                  className="w-1/2 flex justify-center py-2 px-4 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                >
-                  Back
-                </button>
-                <button
-                  type="submit"
-                  disabled={isFinishLoading}
-                  className="w-1/2 flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
-                >
-                  {isFinishLoading ? "Processing..." : "Finish"}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Social Sign-up Options*/}
-          {currentStep === 1 && (
-            <div className="mt-6">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">
-                    Or continue with
-                  </span>
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <button
-                  type="button"
-                  onClick={handleGoogleSignup}
-                  disabled={isGoogleLoading || isPhoneLoading}
-                  className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-blue-100 hover:border-blue-400 hover:text-blue-600 transition-colors duration-200 disabled:opacity-50"
-                >
-                  <svg className="w-5 h-5 text-red-500" viewBox="0 0 24 24">
-                    <path
-                      fill="currentColor"
-                      d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                    />
-                    <path
-                      fill="currentColor"
-                      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                    />
-                    <path
-                      fill="currentColor"
-                      d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                    />
-                    <path
-                      fill="currentColor"
-                      d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                    />
-                  </svg>
-                  <span className="ml-2">
-                    {isGoogleLoading ? "Signing up..." : "Google"}
-                  </span>
-                </button>
-              </div>
-            </div>
-          )}
-        </form>
 
         {/* Recaptcha container for phone authentication */}
         <div id="recaptcha-container"></div>

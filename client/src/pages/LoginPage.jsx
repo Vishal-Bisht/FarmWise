@@ -54,7 +54,6 @@ const LoginPage = () => {
         recaptchaVerifierRef.current = null;
       }
 
-      // Clear the recaptcha container element
       const recaptchaContainer = document.getElementById("sign-in-button");
       if (recaptchaContainer) {
         recaptchaContainer.innerHTML = "";
