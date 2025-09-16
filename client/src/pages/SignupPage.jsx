@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   doSignInWithGoogle,
-  setupRecaptcha,
   doSignInWithPhone,
+  setupRecaptcha,
+  clearRecaptcha,
 } from "../firebase/auth";
 import { useAuth } from "../contexts/AuthContext";
 import { updateProfile } from "firebase/auth";
@@ -20,13 +21,28 @@ const SignupPage = () => {
   });
 
   const [errors, setErrors] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
+  const [isPhoneLoading, setIsPhoneLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isFinishLoading, setIsFinishLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const [authMethod, setAuthMethod] = useState(null); // Track which auth method was used
+
+  // Phone verification states
   const [showPhoneVerification, setShowPhoneVerification] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
   const [confirmationResult, setConfirmationResult] = useState(null);
+  const recaptchaVerifierRef = useRef(null);
 
   const { userLoggedIn } = useAuth();
+
+  // Cleanup function for recaptcha
+  useEffect(() => {
+    return () => {
+      if (recaptchaVerifierRef.current) {
+        clearRecaptcha(recaptchaVerifierRef.current);
+      }
+    };
+  }, []);
 
   const farmTypes = [
     "Crop Farming",
@@ -65,7 +81,7 @@ const SignupPage = () => {
       newErrors.lastName = "Last name is required";
     }
 
-    if (!formData.phone) {
+    if (!formData.phone.trim()) {
       newErrors.phone = "Phone number is required";
     } else if (!/^\+?[\d\s-()]+$/.test(formData.phone)) {
       newErrors.phone = "Invalid phone number format";
@@ -94,81 +110,43 @@ const SignupPage = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleNextStep = () => {
-    if (validateStep1()) {
-      setCurrentStep(2);
-    }
-  };
-
-  const handlePrevStep = () => {
-    setCurrentStep(1);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateStep2()) {
+  const handlePhoneSignup = async () => {
+    if (!validateStep1()) {
       return;
     }
 
-    if (formData.phone && !showPhoneVerification) {
-      await handlePhoneSignup();
-      return;
-    }
-
-    setErrors({ general: "Please use Phone or Google to sign up." });
-  };
-
-  const handleGoogleSignup = async () => {
     try {
-      setIsLoading(true);
-      const result = await doSignInWithGoogle();
-      console.log("Google signup successful:", result.user);
-      alert("Welcome! Account created successfully.");
-      // Redirect to landing
-      navigate("/");
-    } catch (error) {
-      console.error("Google signup error:", error);
-      let errorMessage = "Google signup failed. Please try again.";
+      setIsPhoneLoading(true);
+      setErrors({});
 
-      if (error.code === "auth/popup-closed-by-user") {
-        errorMessage = "Signup cancelled. Please try again.";
-      } else if (
-        error.code === "auth/account-exists-with-different-credential"
-      ) {
-        errorMessage = "An account already exists with the same email address.";
+      // Clear any existing recaptcha
+      if (recaptchaVerifierRef.current) {
+        clearRecaptcha(recaptchaVerifierRef.current);
+        recaptchaVerifierRef.current = null;
       }
 
-      setErrors({ general: errorMessage });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handlePhoneSignup = async () => {
-    if (!formData.phone) {
-      setErrors({ phone: "Please enter a phone number first" });
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-
       // Setup recaptcha verifier
-      const recaptchaVerifier = setupRecaptcha("recaptcha-container");
+      recaptchaVerifierRef.current = setupRecaptcha("recaptcha-container");
 
       // Send verification code
       const confirmation = await doSignInWithPhone(
         formData.phone,
-        recaptchaVerifier
+        recaptchaVerifierRef.current
       );
       setConfirmationResult(confirmation);
       setShowPhoneVerification(true);
       setErrors({});
 
       console.log("Verification code sent");
-      alert("Verification code sent to your phone!");
     } catch (error) {
       console.error("Phone signup error:", error);
+
+      // Clean up recaptcha on error
+      if (recaptchaVerifierRef.current) {
+        clearRecaptcha(recaptchaVerifierRef.current);
+        recaptchaVerifierRef.current = null;
+      }
+
       let errorMessage = "Failed to send verification code. Please try again.";
 
       if (error.code === "auth/invalid-phone-number") {
@@ -176,11 +154,14 @@ const SignupPage = () => {
           "Invalid phone number format. Please use format: +1234567890";
       } else if (error.code === "auth/too-many-requests") {
         errorMessage = "Too many requests. Please try again later.";
+      } else if (error.message && error.message.includes("reCAPTCHA")) {
+        errorMessage =
+          "reCAPTCHA error. Please refresh the page and try again.";
       }
 
       setErrors({ general: errorMessage });
     } finally {
-      setIsLoading(false);
+      setIsPhoneLoading(false);
     }
   };
 
@@ -191,7 +172,7 @@ const SignupPage = () => {
     }
 
     try {
-      setIsLoading(true);
+      setIsPhoneLoading(true);
       const result = await confirmationResult.confirm(verificationCode);
 
       await updateProfile(result.user, {
@@ -199,14 +180,106 @@ const SignupPage = () => {
       });
 
       console.log("Phone verification successful:", result.user);
-      alert("Phone verification successful! Welcome!");
-      // Redirect to landing
-      navigate("/");
+
+      // Set auth method and move to step 2 to complete farm information
+      setAuthMethod("phone");
+      setShowPhoneVerification(false);
+      setCurrentStep(2);
+      setErrors({});
     } catch (error) {
       console.error("Verification error:", error);
-      setErrors({ general: "Invalid verification code. Please try again." });
+      setErrors({
+        verificationCode: "Invalid verification code. Please try again.",
+      });
     } finally {
-      setIsLoading(false);
+      setIsPhoneLoading(false);
+    }
+  };
+
+  const handlePrevStep = () => {
+    setCurrentStep(1);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (currentStep === 1) {
+      if (validateStep1()) {
+        setCurrentStep(2);
+      }
+      return;
+    }
+
+    if (currentStep === 2) {
+      if (!validateStep2()) {
+        return;
+      }
+
+      // Complete the signup for authenticated users
+      if (userLoggedIn) {
+        try {
+          setIsFinishLoading(true);
+          alert("Welcome! Account created successfully.");
+          navigate("/");
+        } catch (error) {
+          console.error("Error completing signup:", error);
+          setErrors({ general: "Error completing signup. Please try again." });
+        } finally {
+          setIsFinishLoading(false);
+        }
+        return;
+      }
+
+      setErrors({
+        general: "Please authenticate first using phone or Google.",
+      });
+    }
+  };
+  const handleGoogleSignup = async () => {
+    try {
+      setIsGoogleLoading(true);
+      setErrors({});
+
+      const result = await doSignInWithGoogle();
+
+      // Extract name from Google account
+      const displayName = result.user.displayName || "";
+      const nameParts = displayName.split(" ");
+      const firstName = nameParts[0] || "";
+      const lastName = nameParts.slice(1).join(" ") || "";
+
+      // Update form data with Google account information
+      setFormData((prev) => ({
+        ...prev,
+        firstName: firstName,
+        lastName: lastName,
+      }));
+
+      console.log("Google signup successful:", result.user);
+
+      // Set auth method and move to step 2 to complete farm information
+      setAuthMethod("google");
+      setCurrentStep(2);
+      setErrors({});
+    } catch (error) {
+      console.error("Google signup error:", error);
+
+      // Only show error for actual problems, not user cancellation
+      if (error.code !== "auth/popup-closed-by-user") {
+        let errorMessage = "Google signup failed. Please try again.";
+        if (error.code === "auth/popup-blocked") {
+          errorMessage =
+            "Popup was blocked. Please allow popups and try again.";
+        } else if (
+          error.code === "auth/account-exists-with-different-credential"
+        ) {
+          errorMessage =
+            "An account already exists with the same email address.";
+        }
+        setErrors({ general: errorMessage });
+      }
+    } finally {
+      setIsGoogleLoading(false);
     }
   };
 
@@ -266,10 +339,10 @@ const SignupPage = () => {
               <button
                 type="button"
                 onClick={handleVerifyCode}
-                disabled={isLoading}
+                disabled={isPhoneLoading}
                 className="w-1/2 flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
               >
-                {isLoading ? "Verifying..." : "Verify"}
+                {isPhoneLoading ? "Verifying..." : "Verify"}
               </button>
             </div>
           </div>
@@ -424,6 +497,7 @@ const SignupPage = () => {
                   )}
                 </div>
               </div>
+
               <div>
                 <label
                   htmlFor="phone"
@@ -446,12 +520,14 @@ const SignupPage = () => {
                   <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
                 )}
               </div>
+
               <button
                 type="button"
-                onClick={handleNextStep}
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                onClick={handlePhoneSignup}
+                disabled={isPhoneLoading || isGoogleLoading}
+                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
               >
-                Continue
+                {isPhoneLoading ? "Sending Code..." : "Continue with Phone"}
               </button>
             </div>
           ) : (
@@ -460,6 +536,37 @@ const SignupPage = () => {
               <h3 className="text-lg font-medium text-gray-800">
                 Farm Information
               </h3>
+
+              {/* Show authentication success */}
+              {userLoggedIn && authMethod && (
+                <div className="rounded-md bg-green-50 p-4">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <svg
+                        className="h-5 w-5 text-green-400"
+                        viewBox="0 0 20 20"
+                        fill="currentColor"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm font-medium text-green-800">
+                        Successfully authenticated with{" "}
+                        {authMethod === "google" ? "Google" : "Phone"}!
+                      </p>
+                      <p className="text-sm text-green-700 mt-1">
+                        Please complete your farm information below.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div>
                 <label
                   htmlFor="farmType"
@@ -545,10 +652,10 @@ const SignupPage = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isFinishLoading}
                   className="w-1/2 flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
                 >
-                  {isLoading ? "Processing..." : "Finish"}
+                  {isFinishLoading ? "Processing..." : "Finish"}
                 </button>
               </div>
             </div>
@@ -572,7 +679,7 @@ const SignupPage = () => {
                 <button
                   type="button"
                   onClick={handleGoogleSignup}
-                  disabled={isLoading}
+                  disabled={isGoogleLoading || isPhoneLoading}
                   className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-blue-100 hover:border-blue-400 hover:text-blue-600 transition-colors duration-200 disabled:opacity-50"
                 >
                   <svg className="w-5 h-5 text-red-500" viewBox="0 0 24 24">
@@ -593,7 +700,9 @@ const SignupPage = () => {
                       d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                     />
                   </svg>
-                  <span className="ml-2">Google</span>
+                  <span className="ml-2">
+                    {isGoogleLoading ? "Signing up..." : "Google"}
+                  </span>
                 </button>
               </div>
             </div>

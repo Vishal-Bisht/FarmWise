@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   getAuth,
   RecaptchaVerifier,
@@ -6,6 +6,7 @@ import {
 } from "firebase/auth";
 import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { doSignInWithGoogle } from "../firebase/auth";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -18,6 +19,20 @@ const LoginPage = () => {
   const recaptchaVerifierRef = useRef(null);
   const { userLoggedIn } = useAuth ? useAuth() : {};
 
+  // Cleanup recaptcha on unmount
+  useEffect(() => {
+    return () => {
+      if (recaptchaVerifierRef.current) {
+        try {
+          recaptchaVerifierRef.current.clear();
+        } catch (error) {
+          console.log("Error clearing recaptcha:", error);
+        }
+        recaptchaVerifierRef.current = null;
+      }
+    };
+  }, []);
+
   // Firebase Phone Auth
   const handleSendOtp = async () => {
     if (!phone) {
@@ -28,25 +43,52 @@ const LoginPage = () => {
     setError("");
     try {
       const auth = getAuth();
-      // Only initialize recaptcha once
-      if (!recaptchaVerifierRef.current) {
-        recaptchaVerifierRef.current = new RecaptchaVerifier(
-          auth,
-          "sign-in-button",
-          {
-            size: "invisible",
-            callback: (response) => {
-              // reCAPTCHA solved
-            },
-            "expired-callback": () => {
-              // reCAPTCHA expired
-              setError("reCAPTCHA expired. Please try again.");
-              recaptchaVerifierRef.current.clear();
-              recaptchaVerifierRef.current = null;
-            },
-          }
-        );
+
+      // Clear any existing recaptcha before creating new one
+      if (recaptchaVerifierRef.current) {
+        try {
+          recaptchaVerifierRef.current.clear();
+        } catch (clearError) {
+          console.log("Error clearing existing recaptcha:", clearError);
+        }
+        recaptchaVerifierRef.current = null;
       }
+
+      // Clear the recaptcha container element
+      const recaptchaContainer = document.getElementById("sign-in-button");
+      if (recaptchaContainer) {
+        recaptchaContainer.innerHTML = "";
+      }
+
+      // Create new RecaptchaVerifier
+      recaptchaVerifierRef.current = new RecaptchaVerifier(
+        auth,
+        "sign-in-button",
+        {
+          size: "invisible",
+          callback: (response) => {
+            // reCAPTCHA solved
+            console.log("reCAPTCHA solved");
+          },
+          "expired-callback": () => {
+            // reCAPTCHA expired
+            setError("reCAPTCHA expired. Please try again.");
+            if (recaptchaVerifierRef.current) {
+              try {
+                recaptchaVerifierRef.current.clear();
+              } catch (clearError) {
+                console.log("Error clearing expired recaptcha:", clearError);
+              }
+              recaptchaVerifierRef.current = null;
+            }
+          },
+          "error-callback": (error) => {
+            console.log("reCAPTCHA error:", error);
+            setError("reCAPTCHA error. Please try again.");
+          },
+        }
+      );
+
       const confirmation = await signInWithPhoneNumber(
         auth,
         phone,
@@ -57,12 +99,27 @@ const LoginPage = () => {
       setError("");
       alert("OTP sent to your phone!");
     } catch (err) {
+      console.log("Phone signup error:", err);
+
+      // Clean up recaptcha on error
+      if (recaptchaVerifierRef.current) {
+        try {
+          recaptchaVerifierRef.current.clear();
+        } catch (clearError) {
+          console.log("Error clearing recaptcha after error:", clearError);
+        }
+        recaptchaVerifierRef.current = null;
+      }
+
       let errorMessage = "Failed to send OTP. Please try again.";
       if (err.code === "auth/invalid-phone-number") {
         errorMessage =
           "Invalid phone number format. Please use format: +1234567890";
       } else if (err.code === "auth/too-many-requests") {
         errorMessage = "Too many requests. Please try again later.";
+      } else if (err.message && err.message.includes("reCAPTCHA")) {
+        errorMessage =
+          "reCAPTCHA error. Please refresh the page and try again.";
       }
       setError(errorMessage);
     } finally {
@@ -88,10 +145,32 @@ const LoginPage = () => {
     }
   };
 
-  // Integrate with Firebase Google Auth
-  const handleGoogleLogin = () => {
-    alert("Google login clicked");
-    // Implement Google login
+  // Google Login
+  const handleGoogleLogin = async () => {
+    try {
+      setIsLoading(true);
+      setError("");
+      const result = await doSignInWithGoogle();
+      console.log("Google login successful:", result.user);
+      alert("Login successful!");
+      navigate("/");
+    } catch (error) {
+      console.error("Google login error:", error);
+
+      // Only show error for actual problems, not user cancellation
+      if (error.code !== "auth/popup-closed-by-user") {
+        let errorMessage = "Google login failed. Please try again.";
+        if (error.code === "auth/popup-blocked") {
+          errorMessage =
+            "Popup was blocked. Please allow popups and try again.";
+        } else if (error.code === "auth/network-request-failed") {
+          errorMessage = "Network error. Please check your connection.";
+        }
+        setError(errorMessage);
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -228,7 +307,8 @@ const LoginPage = () => {
               <button
                 type="button"
                 onClick={handleGoogleLogin}
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-blue-100 hover:border-blue-400 hover:text-blue-600 transition-colors duration-200"
+                disabled={isLoading}
+                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-blue-100 hover:border-blue-400 hover:text-blue-600 transition-colors duration-200 disabled:opacity-50"
               >
                 <svg className="w-5 h-5 text-red-500" viewBox="0 0 24 24">
                   <path
@@ -248,7 +328,9 @@ const LoginPage = () => {
                     d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                   />
                 </svg>
-                <span className="ml-2">Google</span>
+                <span className="ml-2">
+                  {isLoading ? "Signing in..." : "Google"}
+                </span>
               </button>
             </div>
           </div>
