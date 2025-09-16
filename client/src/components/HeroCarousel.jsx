@@ -82,27 +82,48 @@ const HeroCarousel = () => {
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="text-center px-4 max-w-4xl mx-auto">
           <h1 className="text-4xl md:text-6xl font-bold mb-4 animate-fade-in ">
-            <span className="drop-shadow-lg md:drop-shadow-2xl">
+            <span
+              className="drop-shadow-lg md:drop-shadow-2xl"
+              style={{
+                textShadow: "2px 2px 8px rgba(0,0,0,0.35), 0 1px 0 #fff",
+              }}
+            >
               {slides[currentSlide].title}
             </span>
           </h1>
           <p className="text-xl md:text-2xl text-gray-950 font-semibold mb-6 opacity-90">
-            <span className="drop-shadow-md md:drop-shadow-lg">
+            <span
+              className="drop-shadow-md md:drop-shadow-lg"
+              style={{
+                textShadow: "1px 1px 6px rgba(0,0,0,0.25), 0 1px 0 #fff",
+              }}
+            >
               {slides[currentSlide].subtitle}
             </span>
           </p>
           <p className="text-xl text-gray-900 font-medium mb-8 max-w-2xl mx-auto">
-            <span className="drop-shadow-md md:drop-shadow-lg">
+            <span
+              className="drop-shadow-md md:drop-shadow-lg"
+              style={{
+                textShadow: "1px 1px 4px rgba(0,0,0,0.18), 0 1px 0 #fff",
+              }}
+            >
               {slides[currentSlide].description}
             </span>
           </p>
 
           {/* Call to Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg text-lg font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg">
+            <button
+              className="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg text-lg font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg"
+              onClick={() => (window.location.href = "/signup")}
+            >
               Get Started Today
             </button>
-            <button className="border-2 border-white text-white hover:bg-white hover:text-gray-800 px-8 py-3 rounded-lg text-lg font-semibold transition-all duration-300">
+            <button
+              className="border-2 border-white text-white hover:bg-white hover:text-gray-800 px-8 py-3 rounded-lg text-lg font-semibold transition-all duration-300"
+              onClick={() => (window.location.href = "/signup")}
+            >
               Learn More
             </button>
           </div>

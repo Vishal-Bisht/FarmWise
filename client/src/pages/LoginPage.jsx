@@ -1,4 +1,10 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
+import {
+  getAuth,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+} from "firebase/auth";
+import { useAuth } from "../contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 const LoginPage = () => {
@@ -8,28 +14,78 @@ const LoginPage = () => {
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [confirmationResult, setConfirmationResult] = useState(null);
+  const recaptchaVerifierRef = useRef(null);
+  const { userLoggedIn } = useAuth ? useAuth() : {};
 
-  // Integrate with Firebase Phone Auth
+  // Firebase Phone Auth
   const handleSendOtp = async () => {
+    if (!phone) {
+      setError("Please enter a phone number");
+      return;
+    }
     setIsLoading(true);
     setError("");
-    // Simulate sending OTP
-    setTimeout(() => {
+    try {
+      const auth = getAuth();
+      // Only initialize recaptcha once
+      if (!recaptchaVerifierRef.current) {
+        recaptchaVerifierRef.current = new RecaptchaVerifier(
+          auth,
+          "sign-in-button",
+          {
+            size: "invisible",
+            callback: (response) => {
+              // reCAPTCHA solved
+            },
+            "expired-callback": () => {
+              // reCAPTCHA expired
+              setError("reCAPTCHA expired. Please try again.");
+              recaptchaVerifierRef.current.clear();
+              recaptchaVerifierRef.current = null;
+            },
+          }
+        );
+      }
+      const confirmation = await signInWithPhoneNumber(
+        auth,
+        phone,
+        recaptchaVerifierRef.current
+      );
+      setConfirmationResult(confirmation);
       setShowOtpInput(true);
+      setError("");
+      alert("OTP sent to your phone!");
+    } catch (err) {
+      let errorMessage = "Failed to send OTP. Please try again.";
+      if (err.code === "auth/invalid-phone-number") {
+        errorMessage =
+          "Invalid phone number format. Please use format: +1234567890";
+      } else if (err.code === "auth/too-many-requests") {
+        errorMessage = "Too many requests. Please try again later.";
+      }
+      setError(errorMessage);
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
-  // Integrate with Firebase OTP verification
   const handleVerifyOtp = async () => {
+    if (!otp) {
+      setError("Please enter the OTP");
+      return;
+    }
     setIsLoading(true);
     setError("");
-    // Simulate OTP verification
-    setTimeout(() => {
+    try {
+      const result = await confirmationResult.confirm(otp);
       alert("Login successful!");
-      setIsLoading(false);
       navigate("/");
-    }, 1000);
+    } catch (err) {
+      setError("Invalid OTP. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Integrate with Firebase Google Auth
@@ -93,6 +149,8 @@ const LoginPage = () => {
 
         <div className="mt-8 space-y-6">
           {/* Phone Login */}
+          {/* The button below is used for invisible reCAPTCHA */}
+          <button id="sign-in-button" style={{ display: "none" }} />
           <div className="space-y-4">
             <div>
               <label
@@ -170,7 +228,7 @@ const LoginPage = () => {
               <button
                 type="button"
                 onClick={handleGoogleLogin}
-                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-blue-100 hover:border-blue-400 hover:text-blue-600 transition-colors duration-200"
               >
                 <svg className="w-5 h-5 text-red-500" viewBox="0 0 24 24">
                   <path

@@ -46,7 +46,6 @@ const SignupPage = () => {
       [name]: type === "checkbox" ? checked : value,
     }));
 
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors((prev) => ({
         ...prev,
@@ -105,14 +104,18 @@ const SignupPage = () => {
     setCurrentStep(1);
   };
 
-  // No email/password signup. Only phone and Google.
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Just validate farm info and terms, then show message or redirect
     if (!validateStep2()) {
       return;
     }
-    alert("Please use Phone or Google to sign up.");
+
+    if (formData.phone && !showPhoneVerification) {
+      await handlePhoneSignup();
+      return;
+    }
+
+    setErrors({ general: "Please use Phone or Google to sign up." });
   };
 
   const handleGoogleSignup = async () => {
@@ -121,7 +124,7 @@ const SignupPage = () => {
       const result = await doSignInWithGoogle();
       console.log("Google signup successful:", result.user);
       alert("Welcome! Account created successfully.");
-      // Redirect to dashboard or landing
+      // Redirect to landing
       navigate("/");
     } catch (error) {
       console.error("Google signup error:", error);
@@ -191,7 +194,6 @@ const SignupPage = () => {
       setIsLoading(true);
       const result = await confirmationResult.confirm(verificationCode);
 
-      // Update profile with name
       await updateProfile(result.user, {
         displayName: `${formData.firstName} ${formData.lastName}`,
       });
@@ -391,7 +393,6 @@ const SignupPage = () => {
                     className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
                       errors.firstName ? "border-red-300" : "border-gray-300"
                     } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500`}
-                    placeholder="John"
                   />
                   {errors.firstName && (
                     <p className="mt-1 text-sm text-red-600">
@@ -415,7 +416,6 @@ const SignupPage = () => {
                     className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
                       errors.lastName ? "border-red-300" : "border-gray-300"
                     } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500`}
-                    placeholder="Doe"
                   />
                   {errors.lastName && (
                     <p className="mt-1 text-sm text-red-600">
@@ -429,7 +429,7 @@ const SignupPage = () => {
                   htmlFor="phone"
                   className="block text-sm font-medium text-gray-700"
                 >
-                  Phone Number (with country code)
+                  Phone Number
                 </label>
                 <input
                   id="phone"
@@ -440,7 +440,7 @@ const SignupPage = () => {
                   className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
                     errors.phone ? "border-red-300" : "border-gray-300"
                   } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500`}
-                  placeholder="+1234567890"
+                  placeholder="+91 1234567890"
                 />
                 {errors.phone && (
                   <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
@@ -554,7 +554,7 @@ const SignupPage = () => {
             </div>
           )}
 
-          {/* Social Sign-up Options - Only show on step 1 */}
+          {/* Social Sign-up Options*/}
           {currentStep === 1 && (
             <div className="mt-6">
               <div className="relative">
@@ -568,14 +568,14 @@ const SignupPage = () => {
                 </div>
               </div>
 
-              <div className="mt-6 grid grid-cols-2 gap-3">
+              <div className="mt-6">
                 <button
                   type="button"
                   onClick={handleGoogleSignup}
                   disabled={isLoading}
-                  className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                  className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-blue-100 hover:border-blue-400 hover:text-blue-600 transition-colors duration-200 disabled:opacity-50"
                 >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-red-500" viewBox="0 0 24 24">
                     <path
                       fill="currentColor"
                       d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -594,22 +594,6 @@ const SignupPage = () => {
                     />
                   </svg>
                   <span className="ml-2">Google</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handlePhoneSignup}
-                  disabled={isLoading}
-                  className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                  </svg>
-                  <span className="ml-2">Phone</span>
                 </button>
               </div>
             </div>

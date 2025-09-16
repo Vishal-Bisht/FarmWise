@@ -9,7 +9,7 @@ const Navbar = () => {
     { name: "How We Work", href: "#how-we-work" },
     { name: "Impact", href: "#impact" },
     { name: "Insights", href: "#insights" },
-    { name: "AIChat", href: "#ai-chat" },
+    { name: "AIChat", href: "/signup" },
   ];
   const navigate = useNavigate();
 
@@ -47,15 +47,25 @@ const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
-            {navigation.map((item) => (
-              <a
-                key={item.name}
-                href={item.href}
-                className="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-green-50 rounded-md"
-              >
-                {item.name}
-              </a>
-            ))}
+            {navigation.map((item) =>
+              item.name === "AIChat" ? (
+                <a
+                  key={item.name}
+                  href={item.href}
+                  className="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-green-50 rounded-md"
+                >
+                  {item.name}
+                </a>
+              ) : (
+                <a
+                  key={item.name}
+                  href={item.href}
+                  className="text-gray-700 hover:text-green-600 px-3 py-2 text-sm font-medium transition-colors duration-200 hover:bg-green-50 rounded-md"
+                >
+                  {item.name}
+                </a>
+              )
+            )}
           </div>
 
           {/* Create Account Button */}
@@ -111,16 +121,27 @@ const Navbar = () => {
       {isMenuOpen && (
         <div className="md:hidden">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white shadow-lg">
-            {navigation.map((item) => (
-              <a
-                key={item.name}
-                href={item.href}
-                className="text-gray-700 hover:text-green-600 block px-3 py-2 text-base font-medium hover:bg-green-50 rounded-md transition-colors duration-200"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {item.name}
-              </a>
-            ))}
+            {navigation.map((item) =>
+              item.name === "AIChat" ? (
+                <a
+                  key={item.name}
+                  href={item.href}
+                  className="text-gray-700 hover:text-green-600 block px-3 py-2 text-base font-medium hover:bg-green-50 rounded-md transition-colors duration-200"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {item.name}
+                </a>
+              ) : (
+                <a
+                  key={item.name}
+                  href={item.href}
+                  className="text-gray-700 hover:text-green-600 block px-3 py-2 text-base font-medium hover:bg-green-50 rounded-md transition-colors duration-200"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {item.name}
+                </a>
+              )
+            )}
             <div className="pt-4 pb-2 space-y-2">
               <button
                 onClick={() => {
