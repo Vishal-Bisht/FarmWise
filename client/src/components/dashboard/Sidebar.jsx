@@ -2,49 +2,52 @@ import { motion } from "framer-motion";
 import {
   HomeIcon,
   ChartBarIcon,
-  CloudIcon,
-  BeakerIcon,
   Cog6ToothIcon,
   BellIcon,
   UserIcon,
   XMarkIcon,
-  Bars3Icon,
-  MapIcon,
-  CalendarIcon,
   DocumentTextIcon,
-  CurrencyDollarIcon,
 } from "@heroicons/react/24/outline";
 
 const Sidebar = ({ isOpen, setIsOpen, activeSection, setActiveSection }) => {
   const menuItems = [
-    { id: "dashboard", label: "Dashboard", icon: HomeIcon, color: "emerald" },
     {
-      id: "crop-recommendation",
-      label: "Crop Recommendation",
-      icon: BeakerIcon,
-      color: "green",
+      id: "dashboard",
+      label: "Dashboard",
+      icon: HomeIcon,
+      color: "emerald",
     },
     {
-      id: "weather-forecast",
-      label: "Weather Forecast",
-      icon: CloudIcon,
+      id: "farmers",
+      label: "All Farmers",
+      icon: UserIcon,
       color: "blue",
     },
     {
-      id: "soil-analysis",
-      label: "Soil Analysis",
-      icon: MapIcon,
-      color: "amber",
-    },
-    { id: "pest-alert", label: "Pest Alert", icon: BellIcon, color: "red" },
-    {
-      id: "ai-assistant",
-      label: "AI Assistant",
+      id: "analytics",
+      label: "Analytics & Reports",
       icon: ChartBarIcon,
       color: "purple",
     },
+    {
+      id: "queries",
+      label: "Query Management",
+      icon: DocumentTextIcon,
+      color: "amber",
+    },
+    {
+      id: "notifications",
+      label: "Notifications",
+      icon: BellIcon,
+      color: "red",
+    },
+    // {
+    //   id: "experts",
+    //   label: "Expert Directory",
+    //   icon: UserIcon,
+    //   color: "green",
+    // },
     { id: "settings", label: "Settings", icon: Cog6ToothIcon, color: "gray" },
-    { id: "profile", label: "Profile", icon: UserIcon, color: "slate" },
   ];
 
   return (
@@ -57,7 +60,7 @@ const Sidebar = ({ isOpen, setIsOpen, activeSection, setActiveSection }) => {
         />
       )}
 
-      {/* Professional Sidebar */}
+      {/* Sidebar */}
       <div
         className={`
         fixed top-0 left-0 h-screen w-72 bg-slate-800 flex-col z-30 shadow-2xl
@@ -93,18 +96,6 @@ const Sidebar = ({ isOpen, setIsOpen, activeSection, setActiveSection }) => {
             >
               <XMarkIcon className="w-5 h-5" />
             </button>
-          </div>
-
-          {/* Quick Stats */}
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <div className="bg-slate-700 rounded-lg p-3 text-center">
-              <div className="text-lg font-bold text-emerald-400">156</div>
-              <div className="text-xs text-slate-400">Acres</div>
-            </div>
-            <div className="bg-slate-700 rounded-lg p-3 text-center">
-              <div className="text-lg font-bold text-blue-400">12</div>
-              <div className="text-xs text-slate-400">Fields</div>
-            </div>
           </div>
         </div>
 

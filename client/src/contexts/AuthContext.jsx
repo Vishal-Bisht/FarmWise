@@ -26,7 +26,7 @@ export const AuthProvider = ({ children }) => {
 
   async function initializeUser(user) {
     if (user) {
-      setCurrentUser({ ...user });
+      setCurrentUser(user); // Keep the actual Firebase user object
 
       // Check if the auth provider is google
       const isGoogle = user.providerData.some(

@@ -23,12 +23,7 @@ const SignupPage = () => {
 
   const { userLoggedIn } = useAuth();
 
-  // Redirect if already logged in
-  useEffect(() => {
-    if (userLoggedIn) {
-      navigate("/dashboard");
-    }
-  }, [userLoggedIn, navigate]);
+  // Note: Removed automatic redirect to dashboard to allow new users to complete onboarding
 
   // Cleanup function for recaptcha
   useEffect(() => {
@@ -61,7 +56,15 @@ const SignupPage = () => {
     setErrors({});
 
     try {
-      const result = await doSignInWithPhone(phone, recaptchaVerifierRef);
+      // Setup RecaptchaVerifier if not already initialized
+      if (!recaptchaVerifierRef.current) {
+        recaptchaVerifierRef.current = setupRecaptcha("recaptcha-container");
+      }
+
+      const result = await doSignInWithPhone(
+        phone,
+        recaptchaVerifierRef.current
+      );
       setConfirmationResult(result);
       setShowPhoneVerification(true);
     } catch (error) {
@@ -119,8 +122,8 @@ const SignupPage = () => {
       const result = await doSignInWithGoogle();
       console.log("Google signup successful:", result.user);
 
-      // Redirect directly to onboarding after successful Google signup
-      navigate("/onboarding");
+      // Redirect directly to expert onboarding after successful Google signup
+      navigate("/expert-onboarding");
     } catch (error) {
       console.error("Google signup error:", error);
 

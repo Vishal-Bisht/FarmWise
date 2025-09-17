@@ -6,7 +6,10 @@ import {
   RecaptchaVerifier,
   signInWithPhoneNumber,
   signOut,
-  updateProfile
+  updateProfile,
+  fetchSignInMethodsForEmail,
+  PhoneAuthProvider,
+  signInWithCredential
 } from 'firebase/auth';
 import { auth } from './firebase';
 
@@ -75,6 +78,24 @@ export const setupRecaptcha = (containerId) => {
 
 export const doSignInWithPhone = async (phoneNumber, recaptchaVerifier) => {
   return signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
+};
+
+// Login with phone (existing users only)
+export const doLoginWithPhone = async (phoneNumber, recaptchaVerifier) => {
+  // For phone authentication, we can't check if user exists beforehand
+  // We'll handle this in the verification step
+  return signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
+};
+
+// Check if user exists (for Google login)
+export const checkUserExists = async (email) => {
+  try {
+    const methods = await fetchSignInMethodsForEmail(auth, email);
+    return methods.length > 0;
+  } catch (error) {
+    console.error('Error checking if user exists:', error);
+    return false;
+  }
 };
 
 // Clean up RecaptchaVerifier

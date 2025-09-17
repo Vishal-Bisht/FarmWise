@@ -5,13 +5,15 @@ import {
   BellIcon,
   ChevronDownIcon,
   MagnifyingGlassIcon,
-  Cog6ToothIcon,
   ArrowRightOnRectangleIcon,
   UserIcon,
 } from "@heroicons/react/24/outline";
 import { Menu, Transition } from "@headlessui/react";
+import { doSignOut } from "../../firebase/auth";
+import { useNavigate } from "react-router-dom";
 
-const DashboardHeader = ({ user, onMenuClick }) => {
+const DashboardHeader = ({ user, onMenuClick, onNotificationClick }) => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const currentTime = new Date().toLocaleTimeString([], {
     hour: "2-digit",
@@ -23,7 +25,16 @@ const DashboardHeader = ({ user, onMenuClick }) => {
     day: "numeric",
   });
 
-  const userName = user?.displayName?.split(" ")[0] || "Farmer";
+  const userName = user?.displayName?.split(" ")[0] || "Expert";
+
+  const handleSignOut = async () => {
+    try {
+      await doSignOut();
+      navigate("/");
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
 
   return (
     <motion.header
@@ -83,11 +94,14 @@ const DashboardHeader = ({ user, onMenuClick }) => {
           <div className="flex items-center space-x-3">
             {/* Quick Actions */}
             <div className="hidden lg:flex items-center space-x-2">
-              <button className="p-2 rounded-lg hover:bg-slate-100 transition-colors group">
+              <button
+                onClick={() => onNotificationClick && onNotificationClick()}
+                className="p-2 rounded-lg hover:bg-slate-100 transition-colors group relative"
+              >
                 <BellIcon className="w-5 h-5 text-slate-600 group-hover:text-slate-800" />
-              </button>
-              <button className="p-2 rounded-lg hover:bg-slate-100 transition-colors group">
-                <Cog6ToothIcon className="w-5 h-5 text-slate-600 group-hover:text-slate-800" />
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full flex items-center justify-center">
+                  <span className="text-xs text-white font-medium">3</span>
+                </span>
               </button>
             </div>
 
@@ -143,24 +157,12 @@ const DashboardHeader = ({ user, onMenuClick }) => {
                     )}
                   </Menu.Item>
 
-                  <Menu.Item>
-                    {({ active }) => (
-                      <button
-                        className={`${
-                          active ? "bg-slate-50" : ""
-                        } flex items-center w-full px-4 py-2 text-sm text-slate-700`}
-                      >
-                        <Cog6ToothIcon className="w-4 h-4 mr-3 text-slate-500" />
-                        Settings
-                      </button>
-                    )}
-                  </Menu.Item>
-
                   <div className="border-t border-slate-200 my-2"></div>
 
                   <Menu.Item>
                     {({ active }) => (
                       <button
+                        onClick={handleSignOut}
                         className={`${
                           active ? "bg-slate-50" : ""
                         } flex items-center w-full px-4 py-2 text-sm text-slate-700`}

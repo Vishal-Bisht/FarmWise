@@ -1,7 +1,7 @@
-import FarmerOnboardingForm from "../components/FarmerOnboardingForm";
+import OnboardingForm from "../components/OnboardingForm";
 
 const OnboardingPage = () => {
-  return <FarmerOnboardingForm />;
+  return <OnboardingForm />;
 };
 
 export default OnboardingPage;
