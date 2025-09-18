@@ -123,7 +123,7 @@ const SignupPage = () => {
       console.log("Google signup successful:", result.user);
 
       // Redirect directly to expert onboarding after successful Google signup
-      navigate("/expert-onboarding");
+      navigate("/onboarding");
     } catch (error) {
       console.error("Google signup error:", error);
 
