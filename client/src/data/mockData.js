@@ -1,0 +1,201 @@
+// Mock farmer data for dashboard
+export const mockFarmers = [
+  {
+    id: 1,
+    name: "Raj Kumar",
+    location: "Punjab, India",
+    phone: "+91 98765 43210",
+    farmSize: "15 acres",
+    crops: "Wheat, Rice",
+    soilType: "Loamy",
+    query:
+      "Yellow leaves appearing on wheat crop, need immediate help with diagnosis and treatment options",
+    queryTime: "2 hours ago",
+    status: "New Query",
+    priority: "High",
+    totalQueries: 12,
+    pendingQueries: 2,
+    satisfaction: "94%",
+    attachments: true,
+  },
+  {
+    id: 2,
+    name: "Arjun Singh",
+    location: "Haryana, India",
+    phone: "+91 87654 32109",
+    farmSize: "8 acres",
+    crops: "Corn, Mustard",
+    soilType: "Clay",
+    query:
+      "Pest infestation in corn field, tried local pesticide but no improvement seen",
+    queryTime: "1 day ago",
+    status: "In Progress",
+    priority: "High",
+    totalQueries: 8,
+    pendingQueries: 1,
+    satisfaction: "89%",
+    attachments: true,
+  },
+  {
+    id: 3,
+    name: "Mukesh Patel",
+    location: "Gujarat, India",
+    phone: "+91 76543 21098",
+    farmSize: "25 acres",
+    crops: "Cotton, Groundnut",
+    soilType: "Sandy",
+    query:
+      "Need guidance on organic fertilizer usage for cotton crop this season",
+    queryTime: "3 days ago",
+    status: "Resolved",
+    priority: "Medium",
+    totalQueries: 15,
+    pendingQueries: 0,
+    satisfaction: "96%",
+    attachments: false,
+  },
+];
+
+// Mock resolved queries data
+export const mockResolvedQueries = [
+  {
+    id: 1,
+    query: "Pest infestation in wheat crop - brown spots on leaves",
+    farmer: "Raj Kumar",
+    expert: "Dr. Priya Sharma",
+    submittedDate: "Sep 10, 2025",
+    resolvedDate: "Sep 12, 2025",
+    resolutionTime: "2 days",
+    status: "Resolved",
+    satisfaction: "Excellent",
+  },
+  {
+    id: 2,
+    query: "Soil pH testing and fertilizer recommendations",
+    farmer: "Mukesh Patel",
+    expert: "Dr. Amit Singh",
+    submittedDate: "Sep 8, 2025",
+    resolvedDate: "Sep 9, 2025",
+    resolutionTime: "1 day",
+    status: "Resolved",
+    satisfaction: "Good",
+  },
+  {
+    id: 3,
+    query: "Irrigation system optimization for cotton crop",
+    farmer: "Arjun Singh",
+    expert: "Dr. Priya Sharma",
+    submittedDate: "Sep 5, 2025",
+    resolvedDate: "Sep 7, 2025",
+    resolutionTime: "2 days",
+    status: "Resolved",
+    satisfaction: "Excellent",
+  },
+  {
+    id: 4,
+    query: "Organic farming transition guidance needed",
+    farmer: "Sunita Devi",
+    expert: "Dr. Raj Kumar",
+    submittedDate: "Sep 3, 2025",
+    resolvedDate: "Sep 6, 2025",
+    resolutionTime: "3 days",
+    status: "Resolved",
+    satisfaction: "Good",
+  },
+];
+
+// Mock notifications data
+export const mockNotifications = [
+  {
+    id: 1,
+    type: "weather",
+    title: "Weather Alert",
+    message: "Heavy rainfall expected in Punjab region. Advise farmers to postpone field operations and secure crops.",
+    time: "15 minutes ago",
+    status: "Active",
+    priority: "warning",
+  },
+  {
+    id: 2,
+    type: "query",
+    title: "Urgent Query Alert",
+    message: "New urgent query from farmer Raj Kumar regarding pest infestation. Requires immediate expert attention.",
+    time: "2 hours ago",
+    status: "High Priority",
+    priority: "urgent",
+  },
+  {
+    id: 3,
+    type: "system",
+    title: "System Update",
+    message: "New analytics dashboard features available. Enhanced reporting tools for better farmer query management.",
+    time: "1 day ago",
+    status: "Info",
+    priority: "info",
+  },
+  {
+    id: 4,
+    type: "market",
+    title: "Market Update",
+    message: "Wheat prices increased by 8% this week. Good time to advise farmers on harvest timing and market strategies.",
+    time: "3 days ago",
+    status: "Market Info",
+    priority: "success",
+  },
+];
+
+// Dashboard statistics data
+export const dashboardStats = [
+  {
+    id: "new-queries",
+    label: "New Queries",
+    value: 8,
+    icon: "alert",
+    color: "red",
+  },
+  {
+    id: "in-progress",
+    label: "In Progress",
+    value: 12,
+    icon: "clock",
+    color: "yellow",
+  },
+  {
+    id: "resolved",
+    label: "Resolved",
+    value: 45,
+    icon: "check",
+    color: "green",
+  },
+  {
+    id: "total-farmers",
+    label: "Total Farmers",
+    value: 156,
+    icon: "users",
+    color: "blue",
+  },
+];
+
+// Query management statistics
+export const queryStats = [
+  {
+    label: "Resolved This Week",
+    value: 28,
+    color: "green",
+  },
+  {
+    label: "Avg Resolution Days",
+    value: "1.8",
+    color: "blue",
+  },
+  {
+    label: "Satisfaction Rate",
+    value: "94%",
+    color: "amber",
+  },
+  {
+    label: "Active Experts",
+    value: 12,
+    color: "purple",
+  },
+];
