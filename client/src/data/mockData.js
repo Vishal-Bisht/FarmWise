@@ -56,7 +56,7 @@ export const mockFarmers = [
   },
 ];
 
-// Mock resolved queries data
+// Mock queries data with both solved and unsolved status
 export const mockResolvedQueries = [
   {
     id: 1,
@@ -67,7 +67,9 @@ export const mockResolvedQueries = [
     resolvedDate: "Sep 12, 2025",
     resolutionTime: "2 days",
     status: "Resolved",
+    actionStatus: "Solved",
     satisfaction: "Excellent",
+    farmerConfirmed: true,
   },
   {
     id: 2,
@@ -75,10 +77,12 @@ export const mockResolvedQueries = [
     farmer: "Mukesh Patel",
     expert: "Dr. Amit Singh",
     submittedDate: "Sep 8, 2025",
-    resolvedDate: "Sep 9, 2025",
-    resolutionTime: "1 day",
-    status: "Resolved",
-    satisfaction: "Good",
+    resolvedDate: "-",
+    resolutionTime: "Pending",
+    status: "In Progress",
+    actionStatus: "Unsolved",
+    satisfaction: "-",
+    farmerConfirmed: false,
   },
   {
     id: 3,
@@ -89,7 +93,9 @@ export const mockResolvedQueries = [
     resolvedDate: "Sep 7, 2025",
     resolutionTime: "2 days",
     status: "Resolved",
+    actionStatus: "Solved",
     satisfaction: "Excellent",
+    farmerConfirmed: true,
   },
   {
     id: 4,
@@ -97,10 +103,38 @@ export const mockResolvedQueries = [
     farmer: "Sunita Devi",
     expert: "Dr. Raj Kumar",
     submittedDate: "Sep 3, 2025",
-    resolvedDate: "Sep 6, 2025",
+    resolvedDate: "-",
+    resolutionTime: "Pending",
+    status: "Solution Sent",
+    actionStatus: "Unsolved",
+    satisfaction: "Pending Confirmation",
+    farmerConfirmed: false,
+  },
+  {
+    id: 5,
+    query: "Yellowing leaves in rice crop after heavy rainfall",
+    farmer: "Kamal Singh",
+    expert: "Dr. Anjali Verma",
+    submittedDate: "Sep 15, 2025",
+    resolvedDate: "-",
+    resolutionTime: "Pending",
+    status: "New Query",
+    actionStatus: "Unsolved",
+    satisfaction: "-",
+    farmerConfirmed: false,
+  },
+  {
+    id: 6,
+    query: "Cotton bollworm pest control methods",
+    farmer: "Ramesh Patel",
+    expert: "Dr. Suresh Kumar",
+    submittedDate: "Sep 1, 2025",
+    resolvedDate: "Sep 4, 2025",
     resolutionTime: "3 days",
     status: "Resolved",
+    actionStatus: "Solved",
     satisfaction: "Good",
+    farmerConfirmed: true,
   },
 ];
 
@@ -179,23 +213,23 @@ export const dashboardStats = [
 // Query management statistics
 export const queryStats = [
   {
-    label: "Resolved This Week",
-    value: 28,
+    label: "Solved This Week",
+    value: 3,
     color: "green",
   },
   {
+    label: "Unsolved Queries",
+    value: 3,
+    color: "red",
+  },
+  {
     label: "Avg Resolution Days",
-    value: "1.8",
+    value: "2.3",
     color: "blue",
   },
   {
     label: "Satisfaction Rate",
     value: "94%",
     color: "amber",
-  },
-  {
-    label: "Active Experts",
-    value: 12,
-    color: "purple",
   },
 ];

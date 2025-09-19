@@ -64,7 +64,6 @@ const LoginPage = () => {
       setConfirmationResult(confirmation);
       setShowOtpInput(true);
       setError("");
-      alert("OTP sent to your phone!");
     } catch (err) {
       console.error("Phone login error:", err);
       let errorMessage = "Failed to send OTP. Please try again.";
@@ -94,7 +93,6 @@ const LoginPage = () => {
     setError("");
     try {
       const result = await confirmationResult.confirm(otp);
-      alert("Login successful!");
       navigate("/dashboard");
     } catch (err) {
       setError("Invalid OTP. Please try again.");
@@ -110,7 +108,6 @@ const LoginPage = () => {
       setError("");
       const result = await doSignInWithGoogle();
       console.log("Google login successful:", result.user);
-      alert("Login successful!");
       navigate("/dashboard");
     } catch (error) {
       console.error("Google login error:", error);
@@ -171,7 +168,7 @@ const LoginPage = () => {
             </svg>
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Welcome Back to FarmWise
+            Welcome Back to NilMitra
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Don't have an account?{" "}

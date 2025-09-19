@@ -63,7 +63,7 @@ const Sidebar = ({ isOpen, setIsOpen, activeSection, setActiveSection }) => {
       {/* Sidebar */}
       <div
         className={`
-        fixed top-0 left-0 h-screen w-72 bg-slate-800 flex-col z-30 shadow-2xl
+        fixed top-0 left-0 h-screen w-72 bg-slate-800 flex-col z-30 shadow-2xl rounded-r-xl
         ${isOpen ? "flex" : "hidden lg:flex"}
         lg:flex
         transform transition-transform duration-300 ease-in-out
@@ -84,7 +84,7 @@ const Sidebar = ({ isOpen, setIsOpen, activeSection, setActiveSection }) => {
                 </svg>
               </div>
               <div>
-                <span className="text-xl font-bold text-white">FarmWise</span>
+                <span className="text-xl font-bold text-white">NilMitra</span>
                 <div className="text-xs text-slate-400">
                   Agricultural Management
                 </div>

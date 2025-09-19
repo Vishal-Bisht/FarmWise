@@ -140,7 +140,7 @@ const DashboardHeader = ({ user, onMenuClick, onNotificationClick }) => {
                       {user?.displayName || "Farm Manager"}
                     </p>
                     <p className="text-xs text-slate-500">
-                      {user?.email || "farmer@farmwise.com"}
+                      {user?.email || "farmer@nilmitra.com"}
                     </p>
                   </div>
 

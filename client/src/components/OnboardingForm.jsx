@@ -60,27 +60,27 @@ const OnboardingForm = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.firstName.trim())
-      newErrors.firstName = "First name is required";
-    if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
-    if (!formData.employeeId.trim())
-      newErrors.employeeId = "Employee ID is required";
-    if (!formData.department.trim())
-      newErrors.department = "Department is required";
-    if (!formData.ministry.trim()) newErrors.ministry = "Ministry is required";
-    if (!formData.designation.trim())
-      newErrors.designation = "Designation is required";
-    if (!formData.workLocation.trim())
-      newErrors.workLocation = "Work location is required";
-    if (!formData.officialEmail.trim()) {
-      newErrors.officialEmail = "Official email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.officialEmail)) {
-      newErrors.officialEmail = "Please enter a valid email address";
-    }
-    if (!formData.yearsOfExperience.trim())
-      newErrors.yearsOfExperience = "Experience is required";
-    if (formData.expertise.length === 0)
-      newErrors.expertise = "Please select at least one area of expertise";
+    // if (!formData.firstName.trim())
+    //   newErrors.firstName = "First name is required";
+    // if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
+    // if (!formData.employeeId.trim())
+    //   newErrors.employeeId = "Employee ID is required";
+    // if (!formData.department.trim())
+    //   newErrors.department = "Department is required";
+    // if (!formData.ministry.trim()) newErrors.ministry = "Ministry is required";
+    // if (!formData.designation.trim())
+    //   newErrors.designation = "Designation is required";
+    // if (!formData.workLocation.trim())
+    //   newErrors.workLocation = "Work location is required";
+    // if (!formData.officialEmail.trim()) {
+    //   newErrors.officialEmail = "Official email is required";
+    // } else if (!/\S+@\S+\.\S+/.test(formData.officialEmail)) {
+    //   newErrors.officialEmail = "Please enter a valid email address";
+    // }
+    // if (!formData.yearsOfExperience.trim())
+    //   newErrors.yearsOfExperience = "Experience is required";
+    // if (formData.expertise.length === 0)
+    //   newErrors.expertise = "Please select at least one area of expertise";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -108,16 +108,11 @@ const OnboardingForm = () => {
         displayName: `${formData.firstName} ${formData.lastName}`,
       });
 
-      // Here you would typically save the expert data to your database
       console.log("Expert data to save:", formData);
-
-      alert("Profile created successfully! Welcome to FarmWise Expert Portal.");
-
       // Redirect to dashboard
       navigate("/dashboard");
     } catch (error) {
       console.error("Error saving expert profile:", error);
-      alert("Failed to create profile. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -199,7 +194,7 @@ const OnboardingForm = () => {
               Complete Your Expert Profile
             </h1>
             <p className="mt-2 text-gray-600">
-              Please provide your professional details to access the FarmWise
+              Please provide your professional details to access the NilMitra
               Expert Portal
             </p>
           </div>

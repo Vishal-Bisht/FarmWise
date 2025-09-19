@@ -40,7 +40,7 @@ const Navbar = () => {
                 </svg>
               </div>
               <span className="ml-3 text-xl font-bold text-gray-800">
-                FarmWise
+                NilMitra
               </span>
             </div>
           </div>

@@ -20,7 +20,7 @@ const WhoWeAre = () => {
             </h3>
             <div className="space-y-4">
               <p className="text-gray-600 leading-relaxed">
-                FarmWise is a pioneering agricultural technology platform that
+                NilMitra is a pioneering agricultural technology platform that
                 bridges the gap between traditional farming wisdom and modern
                 AI-powered solutions. We believe that every farmer deserves
                 access to the tools and knowledge needed to maximize their
@@ -321,7 +321,7 @@ const Impact = () => {
 
           <div className="bg-white bg-opacity-10 backdrop-blur-sm p-8 rounded-lg">
             <blockquote className="text-gray-700 text-lg italic mb-4">
-              "FarmWise has revolutionized how I manage my crops. The AI
+              "NilMitra has revolutionized how I manage my crops. The AI
               recommendations helped me increase my yield by 40% while using 25%
               less water. It's like having an agricultural expert available
               24/7."
